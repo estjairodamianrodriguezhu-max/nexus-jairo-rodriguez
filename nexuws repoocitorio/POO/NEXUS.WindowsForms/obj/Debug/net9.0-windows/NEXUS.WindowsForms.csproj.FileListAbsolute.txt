@@ -1,0 +1,17 @@
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\bin\Debug\net9.0-windows\NEXUS.WindowsForms.exe
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\bin\Debug\net9.0-windows\NEXUS.WindowsForms.deps.json
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\bin\Debug\net9.0-windows\NEXUS.WindowsForms.runtimeconfig.json
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\bin\Debug\net9.0-windows\NEXUS.WindowsForms.dll
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\bin\Debug\net9.0-windows\NEXUS.WindowsForms.pdb
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\obj\Debug\net9.0-windows\NEXUS.WindowsForms.FrmMenuPrincipal.resources
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\obj\Debug\net9.0-windows\NEXUS.WindowsForms.csproj.GenerateResource.cache
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\obj\Debug\net9.0-windows\NEXUS.WindowsForms.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\obj\Debug\net9.0-windows\NEXUS.WindowsForms.AssemblyInfoInputs.cache
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\obj\Debug\net9.0-windows\NEXUS.WindowsForms.AssemblyInfo.cs
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\obj\Debug\net9.0-windows\NEXUS.WindowsForms.csproj.CoreCompileInputs.cache
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\obj\Debug\net9.0-windows\NEXUS.WindowsForms.sourcelink.json
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\obj\Debug\net9.0-windows\NEXUS.WindowsForms.dll
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\obj\Debug\net9.0-windows\refint\NEXUS.WindowsForms.dll
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\obj\Debug\net9.0-windows\NEXUS.WindowsForms.pdb
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\obj\Debug\net9.0-windows\NEXUS.WindowsForms.genruntimeconfig.cache
+C:\Users\Control\Documents\jairo nexus\nexuws repoocitorio\POO\NEXUS.WindowsForms\obj\Debug\net9.0-windows\ref\NEXUS.WindowsForms.dll
