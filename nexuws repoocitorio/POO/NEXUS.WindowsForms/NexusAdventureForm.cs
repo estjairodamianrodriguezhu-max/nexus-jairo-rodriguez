@@ -32,7 +32,7 @@ public sealed class NexusAdventureForm : Form
     };
     private int px = 2, py = 2;
     private int tick;
-    private readonly Timer timer = new() { Interval = 50 };
+    private readonly System.Windows.Forms.Timer timer = new() { Interval = 50 };
     private const int Tile = 76;
 
     public NexusAdventureForm(int world, string map, Func<int, int, char, bool> interact, Func<string> hud)
