@@ -103,7 +103,7 @@ public sealed class Nexus3Form : Form
 
     public Nexus3Form()
     {
-        Text = "NEXUS 3.0  //  SISTEMA IRIS";
+        Text = "NEXUS 4.0  //  SISTEMA IRIS  //  MISIONES + GUARDADO";
         MinimumSize = new Size(950, 660);
         Size = new Size(1250, 820);
         StartPosition = FormStartPosition.CenterScreen;
@@ -185,9 +185,9 @@ public sealed class Nexus3Form : Form
         page = new Panel { Dock = DockStyle.Fill, BackColor = bg, AutoScroll = true, Padding = new Padding(30, 22, 30, 25) };
         Controls.Add(page); Controls.Add(bottom); Controls.Add(top); Controls.Add(nav);
         var logo = Label("N E X U S", 24, true, cyan); logo.Dock = DockStyle.Top; logo.Height = 60;
-        var caption = Label("SISTEMA DIMENSIONAL  /  V3.0", 9, false, muted); caption.Dock = DockStyle.Top; caption.Height = 62;
+        var caption = Label("SISTEMA DIMENSIONAL  /  V4.0", 9, false, muted); caption.Dock = DockStyle.Top; caption.Height = 62;
         var menu = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-        (string, Action)[] actions = { ("⌂   PANEL PRINCIPAL", Home), ("◈   PERFIL DEL CADETE", Profile), ("◇   EXPLORACIÓN", Explore), ("⚠   ANOMALÍAS IRIS", Anomalies), ("▦   CARTOGRAFÍA", Cartography), ("⚡   RECARGAR ENERGÍA", Recharge), ("✦   MISIONES Y LOGROS", Missions), ("☷   BITÁCORA", History), ("◉   ANIMACIONES", ToggleAnimations), ("ⓘ   ACERCA DE", About) };
+        (string, Action)[] actions = { ("⌂   PANEL PRINCIPAL", Home), ("◈   PERFIL DEL CADETE", Profile), ("◇   EXPLORACIÓN", Explore), ("⚠   ANOMALÍAS IRIS", Anomalies), ("▦   CARTOGRAFÍA", Cartography), ("✦   MISIONES Y LOGROS", Missions), ("⚡   RECARGAR ENERGÍA", Recharge), ("☷   BITÁCORA", History), ("◉   ANIMACIONES", ToggleAnimations), ("ⓘ   ACERCA DE", About) };
         int y = 0;
         foreach (var (name, action) in actions) { var b = Button(name, action); b.Dock = DockStyle.None; b.SetBounds(0, y, 218, 47); menu.Controls.Add(b); y += 59; }
         nav.Controls.Add(menu); nav.Controls.Add(caption); nav.Controls.Add(logo);
@@ -251,11 +251,12 @@ public sealed class Nexus3Form : Form
 
     void Home()
     {
-        Screen("Panel principal", "Bienvenido al centro de mando dimensional.");
+        Screen("Panel principal", "NEXUS 4.0  •  Misiones, niveles y guardado automático.");
         Hero("PROTOCOLO NEXUS", "RED IRIS OPERATIVA   /   ACCESO DIMENSIONAL HABILITADO");
         Info("ESTADO DE LA MISIÓN", player == null ? "No hay explorador registrado. Crea un perfil para comenzar." :
             "CADETE: " + player.Nombre + "    EDAD: " + player.Edad + "\nENERGÍA: " + player.Energia + "%    ESTABILIDAD: " + player.Estabilidad + "%    INTERFERENCIA: " + anomaly.NivelInterferencia + "%", 125);
         Info("UNIVERSO IRIS", "02 realidades: Valle de Cristal y Sector Abisal.\nExplora, analiza anomalías y mantén tu energía vital.", 125);
+        Add(Button("VER MISIONES Y LOGROS  ★", Missions, true));
         Info("ESTADÍSTICAS DE MISIÓN", "Inmersiones realizadas: " + exploredMissions + "     Sectores escaneados: " + scannedSectors +
             "\nNivel: " + NexusProgress.Level(save.Experience) + "     Experiencia: " + save.Experience + " XP", 112);
         Meter("PROGRESO DEL SIGUIENTE NIVEL", NexusProgress.LevelProgress(save.Experience));
