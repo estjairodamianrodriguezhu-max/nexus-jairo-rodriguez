@@ -34,8 +34,9 @@ public sealed class NexusAdventureForm : Form
     private int tick;
     private readonly System.Windows.Forms.Timer timer = new() { Interval = 50 };
     private const int Tile = 76;
-    private const int ViewColumns = 13;
-    private const int ViewRows = 8;
+    private int viewColumns = 13;
+    private int viewRows = 8;
+    private bool showMiniMap = true;
 
     public NexusAdventureForm(int world, string map, Func<int, int, char, bool> interact, Func<string> hud)
     {
@@ -53,7 +54,7 @@ public sealed class NexusAdventureForm : Form
         Controls.Add(info);
         surface.Paint += Draw;
         timer.Tick += (_, _) => { tick++; surface.Invalidate(); };
-        Shown += (_, _) => { timer.Start(); UpdateInfo("Muévete hasta un cristal o riesgo y pulsa E."); };
+        Shown += (_, _) => { timer.Start(); UpdateInfo("Explora el mapa. Puedes ajustar el zoom con + y -."); };
         FormClosed += (_, _) => timer.Dispose();
         KeyDown += OnKey;
     }
@@ -74,6 +75,9 @@ public sealed class NexusAdventureForm : Form
             case Keys.A: case Keys.Left: dx = -1; break;
             case Keys.D: case Keys.Right: dx = 1; break;
             case Keys.E: case Keys.Space: Interact(); e.SuppressKeyPress = true; return;
+            case Keys.M: showMiniMap = !showMiniMap; surface.Invalidate(); UpdateInfo(showMiniMap ? "Minimapa activado." : "Minimapa oculto."); return;
+            case Keys.Oemplus: case Keys.Add: ChangeZoom(-1); return;
+            case Keys.OemMinus: case Keys.Subtract: ChangeZoom(1); return;
             case Keys.Escape: Close(); return;
             default: return;
         }
@@ -89,6 +93,14 @@ public sealed class NexusAdventureForm : Form
         UpdateInfo(target == '◆' ? "Cristal encontrado. Pulsa E para recogerlo." :
             target == '⚠' ? "¡Riesgo detectado! Pulsa E para estabilizarlo." :
             "Explorando sector IRIS. E = interactuar, ESC = salir.");
+        surface.Invalidate();
+    }
+
+    private void ChangeZoom(int direction)
+    {
+        viewColumns = Math.Clamp(viewColumns + direction * 2, 9, 19);
+        viewRows = Math.Clamp(viewRows + direction, 6, 12);
+        UpdateInfo("Zoom actualizado.");
         surface.Invalidate();
     }
 
@@ -112,7 +124,8 @@ public sealed class NexusAdventureForm : Form
     }
 
     private void UpdateInfo(string message) => info.Text =
-        message + Environment.NewLine + hud() + "    |    WASD / Flechas: mover    E: interactuar    ESC: salir";
+        message + Environment.NewLine + hud() + "    |    Posición: " + (px + 1) + "," + (py + 1) +
+        "    |    WASD: mover   E: interactuar   +/-: zoom   M: mapa   ESC: salir";
 
 
     private void DrawMiniMap(Graphics g)
@@ -143,7 +156,7 @@ public sealed class NexusAdventureForm : Form
         Graphics g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;
         g.Clear(Color.FromArgb(5, 12, 26));
-        int cols = ViewColumns, count = ViewRows;
+        int cols = viewColumns, count = viewRows;
         int startX = Math.Clamp(px - cols / 2, 0, Math.Max(0, NexusWorld.Width - cols));
         int startY = Math.Clamp(py - count / 2, 0, Math.Max(0, NexusWorld.Height - count));
         float scale = Math.Min((surface.ClientSize.Width - 24f) / (cols * Tile),
@@ -226,6 +239,6 @@ public sealed class NexusAdventureForm : Form
         g.FillRectangle(Brushes.DarkSlateBlue, cx - 9, cy - 16, 18, 7);
         g.DrawString("EXPLORADOR", small, Brushes.White, cx - 39, cy + 28);
         g.ResetTransform();
-        DrawMiniMap(g);
+        if (showMiniMap) DrawMiniMap(g);
     }
 }
