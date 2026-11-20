@@ -10,7 +10,7 @@ public sealed class NexusMusic : IDisposable
     private SoundPlayer? player;
     private MemoryStream? stream;
     public bool Enabled { get; private set; }
-    public int Volume { get; private set; } = 30;
+    public int Volume { get; private set; } = 65;
 
     public void Set(bool enabled, int volume)
     {
@@ -34,16 +34,17 @@ public sealed class NexusMusic : IDisposable
             {
                 double t = (double)i / rate;
                 double fade = Math.Min(1, Math.Min(t / .6, (seconds - t) / .6));
-                double wave = Math.Sin(2 * Math.PI * 110 * t) * .26 +
-                              Math.Sin(2 * Math.PI * 164.81 * t) * .17 +
-                              Math.Sin(2 * Math.PI * 220 * t) * .12 +
-                              Math.Sin(2 * Math.PI * .125 * t) * Math.Sin(2 * Math.PI * 329.63 * t) * .06;
-                short value = (short)Math.Clamp(wave * fade * (Volume / 100.0) * 12000, -32767, 32767);
+                double wave = Math.Sin(2 * Math.PI * 110 * t) * .40 +
+                              Math.Sin(2 * Math.PI * 164.81 * t) * .25 +
+                              Math.Sin(2 * Math.PI * 220 * t) * .20 +
+                              Math.Sin(2 * Math.PI * .125 * t) * Math.Sin(2 * Math.PI * 329.63 * t) * .10;
+                short value = (short)Math.Clamp(wave * fade * (Volume / 100.0) * 28000, -32767, 32767);
                 writer.Write(value);
             }
         }
         stream.Position = 0;
         player = new SoundPlayer(stream);
+        player.Load();
         player.PlayLooping();
     }
 
