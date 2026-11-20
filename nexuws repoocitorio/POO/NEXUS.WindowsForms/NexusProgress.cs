@@ -19,6 +19,12 @@ public sealed class NexusSave
     public int Scans { get; set; }
     public int Interventions { get; set; }
     public int RechargeCount { get; set; }
+    public int Crystals { get; set; }
+    public int EnergyUpgrade { get; set; }
+    public int StabilityUpgrade { get; set; }
+    public bool MusicEnabled { get; set; } = true;
+    public int MusicVolume { get; set; } = 30;
+    public HashSet<string> CollectedCrystals { get; set; } = new();
     public List<string> Log { get; set; } = new();
     public HashSet<string> ScannedCells { get; set; } = new();
     public HashSet<string> Achievements { get; set; } = new();
@@ -70,6 +76,11 @@ public static class NexusProgress
         data.Scans = Math.Max(0, data.Scans);
         data.Interventions = Math.Max(0, data.Interventions);
         data.RechargeCount = Math.Max(0, data.RechargeCount);
+        data.Crystals = Math.Max(0, data.Crystals);
+        data.EnergyUpgrade = Math.Clamp(data.EnergyUpgrade, 0, 5);
+        data.StabilityUpgrade = Math.Clamp(data.StabilityUpgrade, 0, 5);
+        data.MusicVolume = Math.Clamp(data.MusicVolume, 0, 100);
+        data.CollectedCrystals ??= new();
         data.Log ??= new();
         data.ScannedCells ??= new();
         data.Achievements ??= new();
