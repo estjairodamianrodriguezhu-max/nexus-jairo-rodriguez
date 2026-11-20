@@ -349,48 +349,63 @@ public sealed class Nexus3Form : Form
 
     void Cartography()
     {
-        Screen("Cartografía dimensional", "Explora mapas tácticos con escaneo de sectores.");
+        Screen("Cartografía dimensional", "Explora mundos 2D con tu personaje usando WASD o flechas.");
         Hero("ATLAS DIMENSIONAL", "MAPAS INTERACTIVOS   /   ESCÁNER DE RIESGOS");
         Add(Button("IRIS-07  /  VALLE DE CRISTAL", () => OpenMap(0), true));
         Add(Button("IRIS-12  /  SECTOR ABISAL", () => OpenMap(1), true));
-        Info("LEYENDA", "P Explorador   ◆ Cristal   ⚠ Riesgo   ⌂ Base\n≈ Agua   ? Zona desconocida   ● Punto de interés", 120);
+        Info("CONTROLES", "WASD / Flechas: mover    E / Espacio: recoger cristales o resolver riesgos\nESC: volver al centro IRIS. El agua bloquea el movimiento.", 120);
     }
 
     void OpenMap(int index)
     {
-        Screen("Mapa " + worlds[index], "Selecciona una casilla para escanear el sector.");
-        var rows = maps[index].Split('|');
-        var card = Card(355);
-        var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 10, RowCount = 5, CellBorderStyle = TableLayoutPanelCellBorderStyle.Single };
-        for (int c = 0; c < 10; c++) grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10));
-        for (int r = 0; r < 5; r++) grid.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
-        int known = 0;
-        for (int r = 0; r < 5; r++) for (int c = 0; c < 10; c++)
+        if (!RequirePlayer()) return;
+        // Clear already collected crystals and resolved risks before launching the level.
+        var lines = maps[index].Split('|');
+        for (int y = 0; y < lines.Length; y++)
         {
-            char symbol = c < rows[r].Length ? rows[r][c] : '?';
-            if (symbol != '?') known++;
-            int row = r, col = c;
-            var tile = new Button {
-                Text = symbol == '.' ? "·" : symbol == '~' ? "≈" : symbol.ToString(),
-                Dock = DockStyle.Fill, Margin = new Padding(2), FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand,
-                Font = new Font("Segoe UI Symbol", 16, FontStyle.Bold),
-                BackColor = symbol == '~' ? Color.FromArgb(20, 60, 100) : symbol == '?' ? Color.FromArgb(16, 26, 43) : Color.FromArgb(26, 49, 68),
-                ForeColor = symbol == '⚠' ? Color.OrangeRed : symbol == '◆' ? cyan : Color.White
-            };
-            tile.FlatAppearance.BorderSize = 0;
-            tile.Click += (_, _) => {
-                string key = index + ":" + row + ":" + col;
-                if (save.ScannedCells.Add(key)) { scannedSectors++; Award(5, "Nuevo sector escaneado: " + key); }
-                if (symbol == '◆' && save.CollectedCrystals.Add(key)) { save.Crystals += 3; Log("Cristal recogido en " + key + " (+3)"); MessageBox.Show("¡Has recogido 3 cristales!", "Inventario IRIS"); }
-                MessageBox.Show("Sector [" + (row + 1) + "," + (col + 1) + "]\n" +
-                (symbol == '?' ? "Zona no cartografiada" : symbol == '⚠' ? "Riesgo detectado" : symbol == '◆' ? "Cristal energético" :
-                symbol == 'P' ? "Posición del explorador" : symbol == '⌂' ? "Base de operaciones" : symbol == '●' ? "Punto de interés" :
-                symbol == '~' ? "Zona acuática" : "Terreno estable"), "Escáner IRIS"); };
-            grid.Controls.Add(tile, c, r);
+            char[] chars = lines[y].ToCharArray();
+            for (int x = 0; x < chars.Length; x++)
+            {
+                string key = index + ":" + y + ":" + x;
+                if ((chars[x] == '◆' && save.CollectedCrystals.Contains(key)) ||
+                    (chars[x] == '⚠' && save.ResolvedRisks.Contains(key)))
+                    chars[x] = '.';
+            }
+            lines[y] = new string(chars);
         }
-        card.Controls.Add(grid); Add(card);
-        Info("COBERTURA CARTOGRÁFICA", (known * 2) + "% del territorio registrado. Selecciona un sector para obtener información.", 105);
-        Add(Button("VOLVER A CARTOGRAFÍA", Cartography));
+
+        using var adventure = new NexusAdventureForm(index, string.Join("|", lines),
+            (x, y, symbol) =>
+            {
+                string key = index + ":" + y + ":" + x;
+                if (symbol == '◆')
+                {
+                    if (!save.CollectedCrystals.Add(key)) return false;
+                    save.Crystals += 3;
+                    if (save.ScannedCells.Add(key)) scannedSectors++;
+                    Award(15, "Cristal recogido en IRIS-" + (index == 0 ? "07" : "12") + " (" + x + "," + y + ")");
+                    return true;
+                }
+                if (symbol == '⚠')
+                {
+                    if (player == null || player.Energia < 10)
+                    {
+                        MessageBox.Show("Necesitas al menos 10 puntos de energía para resolver este riesgo.", "NEXUS");
+                        return false;
+                    }
+                    if (!save.ResolvedRisks.Add(key)) return false;
+                    player.ModificarEnergia(-10);
+                    player.ModificarEstabilidad(5);
+                    save.Interventions++;
+                    Award(25, "Riesgo estabilizado en IRIS-" + (index == 0 ? "07" : "12") + " (" + x + "," + y + ")");
+                    return true;
+                }
+                return false;
+            },
+            () => "◆ " + save.Crystals + " cristales    ⚡ " + player!.Energia +
+                  "% energía    ★ " + save.Experience + " XP");
+        adventure.ShowDialog(this);
+        Cartography();
     }
 
     void Recharge()
