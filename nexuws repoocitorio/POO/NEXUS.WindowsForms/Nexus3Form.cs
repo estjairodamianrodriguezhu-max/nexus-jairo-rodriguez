@@ -33,7 +33,8 @@ public sealed class Nexus3Form : Form
     TextBox? nameBox;
     NumericUpDown? ageBox;
     Explorador? player;
-    readonly Anomalia anomaly = new("Interferencia Cuántica IRIS", 40);
+    Anomalia anomaly = new("Interferencia Cuántica IRIS", 40);
+    readonly NexusSave save = new();
     int frame;
     int progress;
     readonly System.Collections.Generic.List<string> history = new();
@@ -44,6 +45,57 @@ public sealed class Nexus3Form : Form
     {
         history.Insert(0, DateTime.Now.ToString("HH:mm") + "  •  " + message);
         if (history.Count > 25) history.RemoveAt(history.Count - 1);
+        Persist();
+    }
+
+    void Persist()
+    {
+        if (player == null) return;
+        save.PlayerName = player.Nombre;
+        save.Age = player.Edad;
+        save.Energy = player.Energia;
+        save.Stability = player.Estabilidad;
+        save.Interference = anomaly.NivelInterferencia;
+        save.Missions = exploredMissions;
+        save.Scans = scannedSectors;
+        save.Log = new System.Collections.Generic.List<string>(history);
+        try { NexusProgress.Save(save); }
+        catch (Exception ex) { status.Text = "⚠ No se pudo guardar la partida: " + ex.Message; }
+    }
+
+    void Award(int xp, string reason)
+    {
+        save.Experience += xp;
+        foreach (var achievement in NexusProgress.NewAchievements(save))
+        {
+            history.Insert(0, "★ LOGRO DESBLOQUEADO: " + achievement);
+            MessageBox.Show(achievement, "NEXUS // LOGRO DESBLOQUEADO");
+        }
+        Log(reason + "  (+" + xp + " XP)");
+    }
+
+    void Restore()
+    {
+        try
+        {
+            var loaded = NexusProgress.Load();
+            if (loaded == null) return;
+            player = new Explorador(loaded.PlayerName, loaded.Age, loaded.Energy, loaded.Stability);
+            anomaly = new Anomalia("Interferencia Cuántica IRIS", loaded.Interference);
+            save.Experience = loaded.Experience;
+            save.Interventions = loaded.Interventions;
+            save.RechargeCount = loaded.RechargeCount;
+            save.ScannedCells = loaded.ScannedCells;
+            save.Achievements = loaded.Achievements;
+            exploredMissions = loaded.Missions;
+            scannedSectors = loaded.Scans;
+            history.AddRange(loaded.Log);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("No se pudo recuperar la partida guardada. Los archivos anteriores no se modificarán.\n" + ex.Message,
+                "NEXUS // Guardado", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
     }
     readonly string[] worlds = { "IRIS-07  •  VALLE DE CRISTAL", "IRIS-12  •  SECTOR ABISAL" };
     readonly string[] maps = { "..◆...????|.⌂..⚠..◆??|..P..●...?|~~....⚠...|~~~..◆..⌂.", "~~~~..◆.??|~⌂.~~⚠.??|..P.~~●...|.⚠...~~~◆.|..◆...~~⌂." };
@@ -80,7 +132,8 @@ public sealed class Nexus3Form : Form
                 if (progress == 100) { Build(); Home(); }
             }
         };
-        Shown += (_, _) => { Splash(); animation.Start(); };
+        Shown += (_, _) => { Restore(); Splash(); animation.Start(); };
+        FormClosing += (_, _) => Persist();
     }
 
     Label Label(string text, int size = 11, bool bold = false, Color? color = null)
@@ -133,7 +186,7 @@ public sealed class Nexus3Form : Form
         var logo = Label("N E X U S", 24, true, cyan); logo.Dock = DockStyle.Top; logo.Height = 60;
         var caption = Label("SISTEMA DIMENSIONAL  /  V3.0", 9, false, muted); caption.Dock = DockStyle.Top; caption.Height = 62;
         var menu = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-        (string, Action)[] actions = { ("⌂   PANEL PRINCIPAL", Home), ("◈   PERFIL DEL CADETE", Profile), ("◇   EXPLORACIÓN", Explore), ("⚠   ANOMALÍAS IRIS", Anomalies), ("▦   CARTOGRAFÍA", Cartography), ("⚡   RECARGAR ENERGÍA", Recharge), ("☷   BITÁCORA", History), ("◉   ANIMACIONES", ToggleAnimations), ("ⓘ   ACERCA DE", About) };
+        (string, Action)[] actions = { ("⌂   PANEL PRINCIPAL", Home), ("◈   PERFIL DEL CADETE", Profile), ("◇   EXPLORACIÓN", Explore), ("⚠   ANOMALÍAS IRIS", Anomalies), ("▦   CARTOGRAFÍA", Cartography), ("⚡   RECARGAR ENERGÍA", Recharge), ("✦   MISIONES Y LOGROS", Missions), ("☷   BITÁCORA", History), ("◉   ANIMACIONES", ToggleAnimations), ("ⓘ   ACERCA DE", About) };
         int y = 0;
         foreach (var (name, action) in actions) { var b = Button(name, action); b.Dock = DockStyle.None; b.SetBounds(0, y, 218, 47); menu.Controls.Add(b); y += 59; }
         nav.Controls.Add(menu); nav.Controls.Add(caption); nav.Controls.Add(logo);
@@ -202,7 +255,9 @@ public sealed class Nexus3Form : Form
         Info("ESTADO DE LA MISIÓN", player == null ? "No hay explorador registrado. Crea un perfil para comenzar." :
             "CADETE: " + player.Nombre + "    EDAD: " + player.Edad + "\nENERGÍA: " + player.Energia + "%    ESTABILIDAD: " + player.Estabilidad + "%    INTERFERENCIA: " + anomaly.NivelInterferencia + "%", 125);
         Info("UNIVERSO IRIS", "02 realidades: Valle de Cristal y Sector Abisal.\nExplora, analiza anomalías y mantén tu energía vital.", 125);
-        Info("ESTADÍSTICAS DE MISIÓN", "Inmersiones realizadas: " + exploredMissions + "     Sectores escaneados: " + scannedSectors + "\nRegistros en bitácora: " + history.Count, 112);
+        Info("ESTADÍSTICAS DE MISIÓN", "Inmersiones realizadas: " + exploredMissions + "     Sectores escaneados: " + scannedSectors +
+            "\nNivel: " + NexusProgress.Level(save.Experience) + "     Experiencia: " + save.Experience + " XP", 112);
+        Meter("PROGRESO DEL SIGUIENTE NIVEL", NexusProgress.LevelProgress(save.Experience));
         Add(Button(player == null ? "CREAR PERFIL DE EXPLORADOR" : "INICIAR EXPLORACIÓN", player == null ? Profile : Explore, true));
         if (player != null) { Meter("ENERGÍA VITAL", player.Energia); Meter("ESTABILIDAD", player.Estabilidad); }
     }
@@ -212,7 +267,8 @@ public sealed class Nexus3Form : Form
         Screen("Perfil del cadete", "Configura tu identidad para acceder a la simulación.");
         if (player != null)
         {
-            Info("EXPLORADOR ACTIVO", "Nombre: " + player.Nombre + "\nEdad: " + player.Edad, 118);
+            Info("EXPLORADOR ACTIVO", "Nombre: " + player.Nombre + "\nEdad: " + player.Edad +
+                "     Nivel: " + NexusProgress.Level(save.Experience) + "     XP: " + save.Experience, 118);
             Meter("ENERGÍA VITAL", player.Energia); Meter("ESTABILIDAD", player.Estabilidad);
             Add(Button("CONTINUAR EXPLORACIÓN", Explore, true)); return;
         }
@@ -254,7 +310,7 @@ public sealed class Nexus3Form : Form
             var btn = Button("INICIAR INMERSIÓN", () => {
                 if (player!.Energia < 20) { MessageBox.Show("Energía insuficiente. Recarga antes de explorar."); return; }
                 player.ModificarEnergia(-15); player.ModificarEstabilidad(-5);
-                exploredMissions++; Log("Inmersión en " + worlds[selected]);
+                exploredMissions++; Award(20, "Inmersión en " + worlds[selected]);
                 MessageBox.Show("Inmersión completada en " + worlds[selected] + "\nEnergía: " + player.Energia + "%\nEstabilidad: " + player.Estabilidad + "%", "NEXUS");
                 Explore();
             }, true);
@@ -272,7 +328,10 @@ public sealed class Nexus3Form : Form
         Add(Button("ANALIZAR E INTERVENIR", () => {
             if (anomaly.NivelInterferencia == 0) { MessageBox.Show("Anomalía neutralizada."); return; }
             if (player.Energia < 15) { MessageBox.Show("Energía insuficiente."); return; }
-            player.ModificarEnergia(-10); anomaly.ReducirInterferencia(15); Log("Interferencia reducida a " + anomaly.NivelInterferencia + "%"); Anomalies();
+            player.ModificarEnergia(-10); anomaly.ReducirInterferencia(15);
+            save.Interventions++;
+            Award(15, "Interferencia reducida a " + anomaly.NivelInterferencia + "%");
+            Anomalies();
         }, true));
     }
 
@@ -307,7 +366,10 @@ public sealed class Nexus3Form : Form
                 ForeColor = symbol == '⚠' ? Color.OrangeRed : symbol == '◆' ? cyan : Color.White
             };
             tile.FlatAppearance.BorderSize = 0;
-            tile.Click += (_, _) => { scannedSectors++; Log("Escaneo IRIS-" + (index == 0 ? "07" : "12") + " sector " + (row + 1) + "," + (col + 1)); MessageBox.Show("Sector [" + (row + 1) + "," + (col + 1) + "]\n" +
+            tile.Click += (_, _) => {
+                string key = index + ":" + row + ":" + col;
+                if (save.ScannedCells.Add(key)) { scannedSectors++; Award(5, "Nuevo sector escaneado: " + key); }
+                MessageBox.Show("Sector [" + (row + 1) + "," + (col + 1) + "]\n" +
                 (symbol == '?' ? "Zona no cartografiada" : symbol == '⚠' ? "Riesgo detectado" : symbol == '◆' ? "Cristal energético" :
                 symbol == 'P' ? "Posición del explorador" : symbol == '⌂' ? "Base de operaciones" : symbol == '●' ? "Punto de interés" :
                 symbol == '~' ? "Zona acuática" : "Terreno estable"), "Escáner IRIS"); };
@@ -322,9 +384,28 @@ public sealed class Nexus3Form : Form
     {
         if (!RequirePlayer()) return;
         player!.RecargarEnergia(30);
+        save.RechargeCount++;
         Log("Recarga de energía completada: " + player.Energia + "%");
         MessageBox.Show("Recarga completada. Energía actual: " + player.Energia + "%", "NEXUS");
         Home();
+    }
+
+    void Missions()
+    {
+        Screen("Misiones y logros", "Objetivos, recompensas y progreso del explorador.");
+        Hero("CENTRO DE MISIONES", "COMPLETA OBJETIVOS   /   OBTÉN EXPERIENCIA Y SUBE DE NIVEL");
+        Info("RANGO DEL EXPLORADOR", "Nivel " + NexusProgress.Level(save.Experience) + "   •   " +
+            save.Experience + " XP acumulados\nLogros desbloqueados: " + save.Achievements.Count + " / 4", 120);
+        Meter("PROGRESO AL SIGUIENTE NIVEL", NexusProgress.LevelProgress(save.Experience));
+        var missions = NexusProgress.Missions(save);
+        for (int i = missions.Length - 1; i >= 0; i--)
+        {
+            var m = missions[i];
+            bool completed = save.Achievements.Contains(m.id);
+            Info((completed ? "★ COMPLETADA  /  " : "◇ EN CURSO  /  ") + m.title,
+                m.detail + "\nProgreso: " + Math.Min(m.current, m.goal) + "/" + m.goal +
+                "     Recompensa: " + m.reward + " XP", 112);
+        }
     }
 
     void ToggleAnimations()
@@ -357,6 +438,6 @@ public sealed class Nexus3Form : Form
     {
         Screen("Acerca de NEXUS", "Edición 3.0 de la interfaz dimensional.");
         Hero("NEXUS 3.0", "CENTRO DE CONTROL IRIS   /   INTERFAZ DE EXPLORACIÓN");
-        Info("ARQUITECTURA", "Windows Forms en C# y .NET 10. Reutiliza las entidades originales Explorador y Anomalia.\nLa aplicación de consola original permanece sin modificaciones. Atajos: Ctrl+1 a Ctrl+5 para navegar, Ctrl+L para la bitácora.", 145);
+        Info("ARQUITECTURA", "Windows Forms en C# y .NET 10. Reutiliza las entidades originales Explorador y Anomalia.\nGuardado automático en AppData local. La aplicación de consola original permanece sin modificaciones. Atajos: Ctrl+1 a Ctrl+5 para navegar, Ctrl+L para la bitácora.", 145);
     }
 }
