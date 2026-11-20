@@ -81,7 +81,8 @@ public sealed class Nexus3Form : Form
             var loaded = NexusProgress.Load();
             if (loaded == null) return;
             player = new Explorador(loaded.PlayerName, loaded.Age, loaded.Energy, loaded.Stability);
-            anomaly = new Anomalia("Interferencia Cuántica IRIS", loaded.Interference);
+            anomaly = new Anomalia("Interferencia Cuántica IRIS", Math.Max(1, loaded.Interference));
+            if (loaded.Interference == 0) anomaly.ReducirInterferencia(1);
             save.Experience = loaded.Experience;
             save.Interventions = loaded.Interventions;
             save.RechargeCount = loaded.RechargeCount;
