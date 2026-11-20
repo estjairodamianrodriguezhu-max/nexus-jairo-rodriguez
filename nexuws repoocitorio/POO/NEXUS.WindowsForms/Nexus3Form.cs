@@ -286,8 +286,8 @@ public sealed class Nexus3Form : Form
             player = new Explorador(nameBox.Text.Trim(), (int)ageBox!.Value, 80, 90);
             status.Text = "● EXPLORADOR CONECTADO   •   " + player.Nombre.ToUpperInvariant(); Log("Cadete " + player.Nombre + " registrado"); Home();
         }, true);
-        save.Dock = DockStyle.None; save.SetBounds(22, 190, 260, 44);
-        card.Controls.AddRange(new Control[] { l, nameBox, age, ageBox, save }); Add(card);
+        activateProfileButton.Dock = DockStyle.None; activateProfileButton.SetBounds(22, 190, 260, 44);
+        card.Controls.AddRange(new Control[] { l, nameBox, age, ageBox, activateProfileButton }); Add(card);
     }
 
     bool RequirePlayer()
