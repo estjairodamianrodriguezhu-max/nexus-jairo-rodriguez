@@ -111,7 +111,7 @@ public sealed class Nexus3Form : Form
 
     public Nexus3Form()
     {
-        Text = "NEXUS 5.1  //  SISTEMA IRIS  //  MAPAS JUGABLES";
+        Text = "NEXUS 6.0  //  EXPANSIÓN DIMENSIONAL";
         MinimumSize = new Size(950, 660);
         Size = new Size(1250, 820);
         StartPosition = FormStartPosition.CenterScreen;
@@ -193,7 +193,7 @@ public sealed class Nexus3Form : Form
         page = new Panel { Dock = DockStyle.Fill, BackColor = bg, AutoScroll = true, Padding = new Padding(30, 22, 30, 25) };
         Controls.Add(page); Controls.Add(bottom); Controls.Add(top); Controls.Add(nav);
         var logo = Label("N E X U S", 24, true, cyan); logo.Dock = DockStyle.Top; logo.Height = 60;
-        var caption = Label("SISTEMA DIMENSIONAL  /  V5.1", 9, false, muted); caption.Dock = DockStyle.Top; caption.Height = 62;
+        var caption = Label("SISTEMA DIMENSIONAL  /  V6.0", 9, false, muted); caption.Dock = DockStyle.Top; caption.Height = 62;
         var menu = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         (string, Action)[] actions = { ("⌂   PANEL PRINCIPAL", Home), ("◈   PERFIL DEL CADETE", Profile), ("◇   EXPLORACIÓN", Explore), ("⚠   ANOMALÍAS IRIS", Anomalies), ("▦   CARTOGRAFÍA", Cartography), ("✦   MISIONES Y LOGROS", Missions), ("◆   INVENTARIO", Inventory), ("▣   TIENDA IRIS", Shop), ("♫   MÚSICA", MusicSettings), ("⚡   RECARGAR ENERGÍA", Recharge), ("☷   BITÁCORA", History), ("◉   ANIMACIONES", ToggleAnimations), ("ⓘ   ACERCA DE", About) };
         int y = 0;
@@ -350,7 +350,7 @@ public sealed class Nexus3Form : Form
 
     void Cartography()
     {
-        Screen("Cartografía dimensional", "Explora mundos 2D con tu personaje usando WASD o flechas.");
+        Screen("Cartografía dimensional", "Explora mundos 2D de 40 × 30 casillas con cámara de seguimiento y minimapa.");
         Hero("ATLAS DIMENSIONAL", "MAPAS INTERACTIVOS   /   ESCÁNER DE RIESGOS");
         Add(Button("IRIS-07  /  VALLE DE CRISTAL", () => OpenMap(0), true));
         Add(Button("IRIS-12  /  SECTOR ABISAL", () => OpenMap(1), true));
@@ -361,7 +361,7 @@ public sealed class Nexus3Form : Form
     {
         if (!RequirePlayer()) return;
         // Clear already collected crystals and resolved risks before launching the level.
-        var lines = maps[index].Split('|');
+        var lines = NexusWorld.Generate(index, maps[index]).Split('|');
         for (int y = 0; y < lines.Length; y++)
         {
             char[] chars = lines[y].ToCharArray();
@@ -466,14 +466,72 @@ public sealed class Nexus3Form : Form
 
     void Welcome()
     {
-        Screen("Bienvenido a NEXUS 5.1", "Selecciona cómo quieres iniciar tu aventura.");
-        Hero("NEXUS 5.1", "UNIVERSO IRIS   /   NUEVA ERA DE EXPLORACIÓN");
-        Info("ESTADO DE PARTIDA", player == null ? "No existe una partida guardada. Crea tu explorador." :
-            "Partida recuperada: " + player.Nombre + "\nNivel: " + NexusProgress.Level(save.Experience) +
-            "   •   Cristales: " + save.Crystals, 130);
-        Add(Button(player == null ? "CREAR NUEVA PARTIDA" : "CONTINUAR PARTIDA", player == null ? Profile : Home, true));
-        if (player != null) Add(Button("NUEVA PARTIDA (REINICIAR PROGRESO)", NewGame));
-        Add(Button("CONFIGURACIÓN DE MÚSICA", MusicSettings));
+        // Dedicated full-window title screen, independent of the dashboard.
+        Controls.Clear();
+        animatedHero = null;
+        var scene = new BufferedPanel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(4, 10, 27) };
+        scene.Paint += (_, e) =>
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            int w = scene.Width, h = scene.Height;
+            using var sky = new LinearGradientBrush(new Rectangle(0, 0, Math.Max(1,w), Math.Max(1,h)),
+                Color.FromArgb(4, 9, 31), Color.FromArgb(17, 56, 88), 55f);
+            g.FillRectangle(sky, 0, 0, w, h);
+            using var star = new SolidBrush(Color.FromArgb(170, 181, 232, 255));
+            for (int i = 0; i < 125; i++)
+            {
+                int x = (i * 719 + 43) % Math.Max(1,w);
+                int y = (i * 379 + 13) % Math.Max(1,h);
+                int r = i % 11 == 0 ? 3 : 1;
+                g.FillEllipse(star, x, y, r, r);
+            }
+            float cx = w * .72f, cy = h * .47f;
+            for (int i = 8; i >= 0; i--)
+            {
+                int radius = 105 + i * 16;
+                using var ring = new Pen(Color.FromArgb(Math.Max(16, 150 - i * 15), 30, 220, 250), i == 0 ? 5 : 2);
+                g.DrawEllipse(ring, cx - radius, cy - radius, radius * 2, radius * 2);
+            }
+            using var core = new SolidBrush(Color.FromArgb(105, 30, 220, 247));
+            g.FillEllipse(core, cx - 91, cy - 91, 182, 182);
+            using var horizon = new Pen(Color.FromArgb(60, 81, 213, 236), 2);
+            for (int i = -10; i <= 10; i++)
+                g.DrawLine(horizon, w * .55f, h * .74f, cx + i * 90, h);
+            using var titleFont = new Font("Segoe UI", 57, FontStyle.Bold);
+            using var subtitleFont = new Font("Segoe UI", 15, FontStyle.Bold);
+            g.DrawString("N E X U S", titleFont, Brushes.White, 65, h * .18f);
+            using var glow = new SolidBrush(Color.FromArgb(83, 229, 255));
+            g.DrawString("EL DESPERTAR DE IRIS", subtitleFont, glow, 78, h * .18f + 106);
+        };
+        Controls.Add(scene);
+        var actions = new FlowLayoutPanel {
+            FlowDirection = FlowDirection.TopDown, WrapContents = false,
+            BackColor = Color.FromArgb(6, 21, 42),
+            Width = 365, Height = 290, Padding = new Padding(12),
+            Anchor = AnchorStyles.Left | AnchorStyles.Bottom
+        };
+        void Place()
+        {
+            actions.Location = new Point(70, Math.Max(265, scene.Height - actions.Height - 52));
+        }
+        scene.Resize += (_, _) => Place();
+        Place();
+        Button MenuButton(string text, Action action, bool primary = false)
+        {
+            var button = Button(text, action, primary);
+            button.Dock = DockStyle.None;
+            button.Width = 326;
+            button.Height = 51;
+            return button;
+        }
+        actions.Controls.Add(MenuButton(player == null ? "INICIAR NUEVA PARTIDA" : "CONTINUAR PARTIDA",
+            () => { Build(); if (player == null) Profile(); else Home(); }, true));
+        if (player != null) actions.Controls.Add(MenuButton("NUEVA PARTIDA", () => { Build(); NewGame(); }));
+        actions.Controls.Add(MenuButton("CONFIGURACIÓN Y AUDIO", () => { Build(); MusicSettings(); }));
+        actions.Controls.Add(MenuButton("SALIR DEL JUEGO", Close));
+        scene.Controls.Add(actions);
+        scene.BringToFront();
     }
 
     void NewGame()
