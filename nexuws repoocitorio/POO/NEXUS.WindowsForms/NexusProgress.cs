@@ -25,6 +25,7 @@ public sealed class NexusSave
     public bool MusicEnabled { get; set; } = true;
     public int MusicVolume { get; set; } = 30;
     public HashSet<string> CollectedCrystals { get; set; } = new();
+    public HashSet<string> ResolvedRisks { get; set; } = new();
     public List<string> Log { get; set; } = new();
     public HashSet<string> ScannedCells { get; set; } = new();
     public HashSet<string> Achievements { get; set; } = new();
@@ -81,6 +82,7 @@ public static class NexusProgress
         data.StabilityUpgrade = Math.Clamp(data.StabilityUpgrade, 0, 5);
         data.MusicVolume = Math.Clamp(data.MusicVolume, 0, 100);
         data.CollectedCrystals ??= new();
+        data.ResolvedRisks ??= new();
         data.Log ??= new();
         data.ScannedCells ??= new();
         data.Achievements ??= new();
