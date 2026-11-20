@@ -36,6 +36,15 @@ public sealed class Nexus3Form : Form
     readonly Anomalia anomaly = new("Interferencia Cuántica IRIS", 40);
     int frame;
     int progress;
+    readonly System.Collections.Generic.List<string> history = new();
+    int exploredMissions;
+    int scannedSectors;
+    bool animationsEnabled = true;
+    void Log(string message)
+    {
+        history.Insert(0, DateTime.Now.ToString("HH:mm") + "  •  " + message);
+        if (history.Count > 25) history.RemoveAt(history.Count - 1);
+    }
     readonly string[] worlds = { "IRIS-07  •  VALLE DE CRISTAL", "IRIS-12  •  SECTOR ABISAL" };
     readonly string[] maps = { "..◆...????|.⌂..⚠..◆??|..P..●...?|~~....⚠...|~~~..◆..⌂.", "~~~~..◆.??|~⌂.~~⚠.??|..P.~~●...|.⚠...~~~◆.|..◆...~~⌂." };
 
@@ -48,11 +57,22 @@ public sealed class Nexus3Form : Form
         BackColor = bg;
         Font = new Font("Segoe UI", 10);
         DoubleBuffered = true;
+        KeyPreview = true;
+        KeyDown += (_, e) =>
+        {
+            if (progress < 100) return;
+            if (e.Control && e.KeyCode == Keys.D1) { Home(); e.SuppressKeyPress = true; }
+            else if (e.Control && e.KeyCode == Keys.D2) { Profile(); e.SuppressKeyPress = true; }
+            else if (e.Control && e.KeyCode == Keys.D3) { Explore(); e.SuppressKeyPress = true; }
+            else if (e.Control && e.KeyCode == Keys.D4) { Anomalies(); e.SuppressKeyPress = true; }
+            else if (e.Control && e.KeyCode == Keys.D5) { Cartography(); e.SuppressKeyPress = true; }
+            else if (e.Control && e.KeyCode == Keys.L) { History(); e.SuppressKeyPress = true; }
+        };
         animation.Tick += (_, _) =>
         {
             frame++;
             if (clock != null && !clock.IsDisposed) clock.Text = DateTime.Now.ToString("dd MMM yyyy  •  HH:mm:ss").ToUpperInvariant();
-            if (animatedHero != null && !animatedHero.IsDisposed) animatedHero.Invalidate();
+            if (animationsEnabled && animatedHero != null && !animatedHero.IsDisposed) animatedHero.Invalidate();
             if (progress < 100)
             {
                 progress = Math.Min(100, progress + rng.Next(2, 6));
@@ -113,7 +133,7 @@ public sealed class Nexus3Form : Form
         var logo = Label("N E X U S", 24, true, cyan); logo.Dock = DockStyle.Top; logo.Height = 60;
         var caption = Label("SISTEMA DIMENSIONAL  /  V3.0", 9, false, muted); caption.Dock = DockStyle.Top; caption.Height = 62;
         var menu = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-        (string, Action)[] actions = { ("⌂   PANEL PRINCIPAL", Home), ("◈   PERFIL DEL CADETE", Profile), ("◇   EXPLORACIÓN", Explore), ("⚠   ANOMALÍAS IRIS", Anomalies), ("▦   CARTOGRAFÍA", Cartography), ("⚡   RECARGAR ENERGÍA", Recharge), ("ⓘ   ACERCA DE", About) };
+        (string, Action)[] actions = { ("⌂   PANEL PRINCIPAL", Home), ("◈   PERFIL DEL CADETE", Profile), ("◇   EXPLORACIÓN", Explore), ("⚠   ANOMALÍAS IRIS", Anomalies), ("▦   CARTOGRAFÍA", Cartography), ("⚡   RECARGAR ENERGÍA", Recharge), ("☷   BITÁCORA", History), ("◉   ANIMACIONES", ToggleAnimations), ("ⓘ   ACERCA DE", About) };
         int y = 0;
         foreach (var (name, action) in actions) { var b = Button(name, action); b.Dock = DockStyle.None; b.SetBounds(0, y, 218, 47); menu.Controls.Add(b); y += 59; }
         nav.Controls.Add(menu); nav.Controls.Add(caption); nav.Controls.Add(logo);
@@ -156,7 +176,7 @@ public sealed class Nexus3Form : Form
             using var orbit = new Pen(Color.FromArgb(115, 57, 222, 244), 2);
             for (int i = 0; i < 3; i++) g.DrawEllipse(orbit, cx - 35 - i * 20, cy - 35 - i * 20, 70 + 40 * i, 70 + 40 * i);
             using var dot = new SolidBrush(cyan);
-            double angle = frame * .04;
+            double angle = (animationsEnabled ? frame : 0) * .04;
             g.FillEllipse(dot, cx + (int)(75 * Math.Cos(angle)) - 6, cy + (int)(75 * Math.Sin(angle)) - 6, 12, 12);
             using var font = new Font("Segoe UI", 23, FontStyle.Bold);
             using var smaller = new Font("Segoe UI", 10);
@@ -182,6 +202,7 @@ public sealed class Nexus3Form : Form
         Info("ESTADO DE LA MISIÓN", player == null ? "No hay explorador registrado. Crea un perfil para comenzar." :
             "CADETE: " + player.Nombre + "    EDAD: " + player.Edad + "\nENERGÍA: " + player.Energia + "%    ESTABILIDAD: " + player.Estabilidad + "%    INTERFERENCIA: " + anomaly.NivelInterferencia + "%", 125);
         Info("UNIVERSO IRIS", "02 realidades: Valle de Cristal y Sector Abisal.\nExplora, analiza anomalías y mantén tu energía vital.", 125);
+        Info("ESTADÍSTICAS DE MISIÓN", "Inmersiones realizadas: " + exploredMissions + "     Sectores escaneados: " + scannedSectors + "\nRegistros en bitácora: " + history.Count, 112);
         Add(Button(player == null ? "CREAR PERFIL DE EXPLORADOR" : "INICIAR EXPLORACIÓN", player == null ? Profile : Explore, true));
         if (player != null) { Meter("ENERGÍA VITAL", player.Energia); Meter("ESTABILIDAD", player.Estabilidad); }
     }
@@ -205,7 +226,7 @@ public sealed class Nexus3Form : Form
         var save = Button("ACTIVAR PERFIL", () => {
             if (nameBox!.Text.Trim().Length < 2) { MessageBox.Show("Escribe un nombre de al menos dos caracteres."); return; }
             player = new Explorador(nameBox.Text.Trim(), (int)ageBox!.Value, 80, 90);
-            status.Text = "● EXPLORADOR CONECTADO   •   " + player.Nombre.ToUpperInvariant(); Home();
+            status.Text = "● EXPLORADOR CONECTADO   •   " + player.Nombre.ToUpperInvariant(); Log("Cadete " + player.Nombre + " registrado"); Home();
         }, true);
         save.Dock = DockStyle.None; save.SetBounds(22, 190, 260, 44);
         card.Controls.AddRange(new Control[] { l, nameBox, age, ageBox, save }); Add(card);
@@ -233,6 +254,7 @@ public sealed class Nexus3Form : Form
             var btn = Button("INICIAR INMERSIÓN", () => {
                 if (player!.Energia < 20) { MessageBox.Show("Energía insuficiente. Recarga antes de explorar."); return; }
                 player.ModificarEnergia(-15); player.ModificarEstabilidad(-5);
+                exploredMissions++; Log("Inmersión en " + worlds[selected]);
                 MessageBox.Show("Inmersión completada en " + worlds[selected] + "\nEnergía: " + player.Energia + "%\nEstabilidad: " + player.Estabilidad + "%", "NEXUS");
                 Explore();
             }, true);
@@ -250,7 +272,7 @@ public sealed class Nexus3Form : Form
         Add(Button("ANALIZAR E INTERVENIR", () => {
             if (anomaly.NivelInterferencia == 0) { MessageBox.Show("Anomalía neutralizada."); return; }
             if (player.Energia < 15) { MessageBox.Show("Energía insuficiente."); return; }
-            player.ModificarEnergia(-10); anomaly.ReducirInterferencia(15); Anomalies();
+            player.ModificarEnergia(-10); anomaly.ReducirInterferencia(15); Log("Interferencia reducida a " + anomaly.NivelInterferencia + "%"); Anomalies();
         }, true));
     }
 
@@ -285,10 +307,10 @@ public sealed class Nexus3Form : Form
                 ForeColor = symbol == '⚠' ? Color.OrangeRed : symbol == '◆' ? cyan : Color.White
             };
             tile.FlatAppearance.BorderSize = 0;
-            tile.Click += (_, _) => MessageBox.Show("Sector [" + (row + 1) + "," + (col + 1) + "]\n" +
+            tile.Click += (_, _) => { scannedSectors++; Log("Escaneo IRIS-" + (index == 0 ? "07" : "12") + " sector " + (row + 1) + "," + (col + 1)); MessageBox.Show("Sector [" + (row + 1) + "," + (col + 1) + "]\n" +
                 (symbol == '?' ? "Zona no cartografiada" : symbol == '⚠' ? "Riesgo detectado" : symbol == '◆' ? "Cristal energético" :
                 symbol == 'P' ? "Posición del explorador" : symbol == '⌂' ? "Base de operaciones" : symbol == '●' ? "Punto de interés" :
-                symbol == '~' ? "Zona acuática" : "Terreno estable"), "Escáner IRIS");
+                symbol == '~' ? "Zona acuática" : "Terreno estable"), "Escáner IRIS"); };
             grid.Controls.Add(tile, c, r);
         }
         card.Controls.Add(grid); Add(card);
@@ -300,14 +322,41 @@ public sealed class Nexus3Form : Form
     {
         if (!RequirePlayer()) return;
         player!.RecargarEnergia(30);
+        Log("Recarga de energía completada: " + player.Energia + "%");
         MessageBox.Show("Recarga completada. Energía actual: " + player.Energia + "%", "NEXUS");
         Home();
+    }
+
+    void ToggleAnimations()
+    {
+        animationsEnabled = !animationsEnabled;
+        Log("Animaciones " + (animationsEnabled ? "activadas" : "pausadas"));
+        if (animatedHero != null && !animatedHero.IsDisposed) animatedHero.Invalidate();
+        MessageBox.Show(animationsEnabled ? "Animaciones activadas." : "Animaciones pausadas.", "Preferencias NEXUS");
+    }
+
+    void History()
+    {
+        Screen("Bitácora de misiones", "Registro local de las acciones de esta sesión.");
+        Info("RESUMEN DE OPERACIONES", "Inmersiones: " + exploredMissions + "     Escaneos: " + scannedSectors +
+            "\nInterferencia: " + anomaly.NivelInterferencia + "%", 118);
+        var card = Card(360);
+        var log = new TextBox { Multiline = true, ReadOnly = true, Dock = DockStyle.Fill,
+            ScrollBars = ScrollBars.Vertical, BorderStyle = BorderStyle.None,
+            BackColor = surface, ForeColor = Color.White, Font = new Font("Consolas", 11),
+            Text = history.Count == 0 ? "No hay acciones registradas todavía." : string.Join(Environment.NewLine + Environment.NewLine, history) };
+        card.Controls.Add(log); Add(card);
+        Add(Button("COPIAR BITÁCORA", () => {
+            if (history.Count == 0) { MessageBox.Show("La bitácora está vacía."); return; }
+            Clipboard.SetText(string.Join(Environment.NewLine, history));
+            MessageBox.Show("Bitácora copiada al portapapeles.");
+        }, true));
     }
 
     void About()
     {
         Screen("Acerca de NEXUS", "Edición 3.0 de la interfaz dimensional.");
         Hero("NEXUS 3.0", "CENTRO DE CONTROL IRIS   /   INTERFAZ DE EXPLORACIÓN");
-        Info("ARQUITECTURA", "Windows Forms en C# y .NET 10. Reutiliza las entidades originales Explorador y Anomalia.\nLa aplicación de consola original permanece sin modificaciones.", 145);
+        Info("ARQUITECTURA", "Windows Forms en C# y .NET 10. Reutiliza las entidades originales Explorador y Anomalia.\nLa aplicación de consola original permanece sin modificaciones. Atajos: Ctrl+1 a Ctrl+5 para navegar, Ctrl+L para la bitácora.", 145);
     }
 }
