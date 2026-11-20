@@ -89,6 +89,7 @@ public sealed class Nexus3Form : Form
             save.RechargeCount = loaded.RechargeCount;
             save.Crystals = loaded.Crystals;
             save.CollectedCrystals = loaded.CollectedCrystals;
+            save.ResolvedRisks = loaded.ResolvedRisks;
             save.EnergyUpgrade = loaded.EnergyUpgrade;
             save.StabilityUpgrade = loaded.StabilityUpgrade;
             save.MusicEnabled = loaded.MusicEnabled;
@@ -110,7 +111,7 @@ public sealed class Nexus3Form : Form
 
     public Nexus3Form()
     {
-        Text = "NEXUS 5.0  //  SISTEMA IRIS";
+        Text = "NEXUS 5.1  //  SISTEMA IRIS  //  MAPAS JUGABLES";
         MinimumSize = new Size(950, 660);
         Size = new Size(1250, 820);
         StartPosition = FormStartPosition.CenterScreen;
@@ -192,7 +193,7 @@ public sealed class Nexus3Form : Form
         page = new Panel { Dock = DockStyle.Fill, BackColor = bg, AutoScroll = true, Padding = new Padding(30, 22, 30, 25) };
         Controls.Add(page); Controls.Add(bottom); Controls.Add(top); Controls.Add(nav);
         var logo = Label("N E X U S", 24, true, cyan); logo.Dock = DockStyle.Top; logo.Height = 60;
-        var caption = Label("SISTEMA DIMENSIONAL  /  V5.0", 9, false, muted); caption.Dock = DockStyle.Top; caption.Height = 62;
+        var caption = Label("SISTEMA DIMENSIONAL  /  V5.1", 9, false, muted); caption.Dock = DockStyle.Top; caption.Height = 62;
         var menu = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         (string, Action)[] actions = { ("⌂   PANEL PRINCIPAL", Home), ("◈   PERFIL DEL CADETE", Profile), ("◇   EXPLORACIÓN", Explore), ("⚠   ANOMALÍAS IRIS", Anomalies), ("▦   CARTOGRAFÍA", Cartography), ("✦   MISIONES Y LOGROS", Missions), ("◆   INVENTARIO", Inventory), ("▣   TIENDA IRIS", Shop), ("♫   MÚSICA", MusicSettings), ("⚡   RECARGAR ENERGÍA", Recharge), ("☷   BITÁCORA", History), ("◉   ANIMACIONES", ToggleAnimations), ("ⓘ   ACERCA DE", About) };
         int y = 0;
@@ -465,8 +466,8 @@ public sealed class Nexus3Form : Form
 
     void Welcome()
     {
-        Screen("Bienvenido a NEXUS 5.0", "Selecciona cómo quieres iniciar tu aventura.");
-        Hero("NEXUS 5.0", "UNIVERSO IRIS   /   NUEVA ERA DE EXPLORACIÓN");
+        Screen("Bienvenido a NEXUS 5.1", "Selecciona cómo quieres iniciar tu aventura.");
+        Hero("NEXUS 5.1", "UNIVERSO IRIS   /   NUEVA ERA DE EXPLORACIÓN");
         Info("ESTADO DE PARTIDA", player == null ? "No existe una partida guardada. Crea tu explorador." :
             "Partida recuperada: " + player.Nombre + "\nNivel: " + NexusProgress.Level(save.Experience) +
             "   •   Cristales: " + save.Crystals, 130);
@@ -487,7 +488,7 @@ public sealed class Nexus3Form : Form
         save.Experience = 0; save.Missions = 0; save.Scans = 0;
         save.Interventions = 0; save.RechargeCount = 0; save.Crystals = 0;
         save.EnergyUpgrade = 0; save.StabilityUpgrade = 0;
-        save.ScannedCells.Clear(); save.CollectedCrystals.Clear(); save.Achievements.Clear();
+        save.ScannedCells.Clear(); save.CollectedCrystals.Clear(); save.ResolvedRisks.Clear(); save.Achievements.Clear();
         try { if (System.IO.File.Exists(NexusProgress.SavePath)) System.IO.File.Delete(NexusProgress.SavePath); }
         catch (Exception ex) { MessageBox.Show("No se pudo reiniciar el guardado: " + ex.Message); return; }
         Profile();
@@ -537,7 +538,8 @@ public sealed class Nexus3Form : Form
         }, true));
         Add(Button("VOLUMEN BAJO  /  15%", () => { save.MusicVolume = 15; ApplyMusic(); }));
         Add(Button("VOLUMEN MEDIO  /  35%", () => { save.MusicVolume = 35; ApplyMusic(); }));
-        Add(Button("VOLUMEN ALTO  /  65%", () => { save.MusicVolume = 65; ApplyMusic(); }));
+        Add(Button("VOLUMEN ALTO  /  85%", () => { save.MusicVolume = 85; save.MusicEnabled = true; ApplyMusic(); }));
+        Add(Button("PROBAR AUDIO DEL SISTEMA", () => System.Media.SystemSounds.Asterisk.Play()));
     }
 
     void ApplyMusic()
