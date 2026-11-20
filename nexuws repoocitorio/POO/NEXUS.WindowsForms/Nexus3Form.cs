@@ -274,7 +274,7 @@ public sealed class Nexus3Form : Form
         int known = 0;
         for (int r = 0; r < 5; r++) for (int c = 0; c < 10; c++)
         {
-            char symbol = rows[r][c];
+            char symbol = c < rows[r].Length ? rows[r][c] : '?';
             if (symbol != '?') known++;
             int row = r, col = c;
             var tile = new Button {
