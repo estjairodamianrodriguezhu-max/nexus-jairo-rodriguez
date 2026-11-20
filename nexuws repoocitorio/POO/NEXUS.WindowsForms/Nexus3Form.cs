@@ -8,14 +8,26 @@ namespace NEXUS.WindowsForms;
 
 public sealed class Nexus3Form : Form
 {
+    // Double buffering avoids clearing the background between animation frames.
+    private sealed class BufferedPanel : Panel
+    {
+        public BufferedPanel()
+        {
+            DoubleBuffered = true;
+            ResizeRedraw = true;
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
+            UpdateStyles();
+        }
+    }
     readonly Color bg = Color.FromArgb(6, 12, 27);
     readonly Color surface = Color.FromArgb(16, 31, 53);
     readonly Color cyan = Color.FromArgb(57, 222, 244);
     readonly Color muted = Color.FromArgb(167, 191, 214);
-    readonly System.Windows.Forms.Timer animation = new() { Interval = 45 };
+    readonly System.Windows.Forms.Timer animation = new() { Interval = 65 };
     readonly Random rng = new();
     Panel page = null!;
     Panel? animatedHero;
+    ProgressBar? splashBar;
     Label clock = null!;
     Label status = null!;
     TextBox? nameBox;
@@ -41,7 +53,12 @@ public sealed class Nexus3Form : Form
             frame++;
             if (clock != null && !clock.IsDisposed) clock.Text = DateTime.Now.ToString("dd MMM yyyy  •  HH:mm:ss").ToUpperInvariant();
             if (animatedHero != null && !animatedHero.IsDisposed) animatedHero.Invalidate();
-            if (progress < 100) { progress = Math.Min(100, progress + rng.Next(2, 6)); Splash(); if (progress == 100) { Build(); Home(); } }
+            if (progress < 100)
+            {
+                progress = Math.Min(100, progress + rng.Next(2, 6));
+                if (splashBar != null && !splashBar.IsDisposed) splashBar.Value = progress;
+                if (progress == 100) { Build(); Home(); }
+            }
         };
         Shown += (_, _) => { Splash(); animation.Start(); };
     }
@@ -80,6 +97,7 @@ public sealed class Nexus3Form : Form
         var title = Label("N  E  X  U  S", 44, true, cyan); title.TextAlign = ContentAlignment.MiddleCenter; title.Dock = DockStyle.Fill;
         var sub = Label("CONECTANDO CON LA RED DIMENSIONAL IRIS...", 12, false, muted); sub.TextAlign = ContentAlignment.MiddleCenter; sub.Dock = DockStyle.Fill;
         var bar = new ProgressBar { Maximum = 100, Value = progress, Dock = DockStyle.Fill, Margin = new Padding(120, 10, 120, 10) };
+        splashBar = bar;
         wrap.Controls.Add(new Panel(), 0, 0); wrap.Controls.Add(title, 0, 1); wrap.Controls.Add(sub, 0, 2); wrap.Controls.Add(bar, 0, 3);
         Controls.Add(wrap);
     }
@@ -125,7 +143,7 @@ public sealed class Nexus3Form : Form
 
     void Hero(string title, string description)
     {
-        var hero = new Panel { Dock = DockStyle.Top, Height = 177, BackColor = surface };
+        var hero = new BufferedPanel { Dock = DockStyle.Top, Height = 177, BackColor = surface };
         hero.Paint += (_, e) =>
         {
             var g = e.Graphics; g.SmoothingMode = SmoothingMode.AntiAlias;
