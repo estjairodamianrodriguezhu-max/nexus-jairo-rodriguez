@@ -281,7 +281,7 @@ public sealed class Nexus3Form : Form
         var age = Label("EDAD", 11, true, cyan); age.SetBounds(22, 103, 250, 30);
         ageBox = new NumericUpDown { Minimum = 18, Maximum = 80, Value = 20, Font = new Font("Segoe UI", 12), BackColor = Color.FromArgb(29, 49, 70), ForeColor = Color.White };
         ageBox.SetBounds(22, 139, 130, 33);
-        var save = Button("ACTIVAR PERFIL", () => {
+        var activateProfileButton = Button("ACTIVAR PERFIL", () => {
             if (nameBox!.Text.Trim().Length < 2) { MessageBox.Show("Escribe un nombre de al menos dos caracteres."); return; }
             player = new Explorador(nameBox.Text.Trim(), (int)ageBox!.Value, 80, 90);
             status.Text = "● EXPLORADOR CONECTADO   •   " + player.Nombre.ToUpperInvariant(); Log("Cadete " + player.Nombre + " registrado"); Home();
