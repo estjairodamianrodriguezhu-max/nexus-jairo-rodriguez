@@ -35,6 +35,7 @@ public sealed class Nexus3Form : Form
     Explorador? player;
     Anomalia anomaly = new("Interferencia Cuántica IRIS", 40);
     readonly NexusSave save = new();
+    readonly NexusMusic music = new();
     int frame;
     int progress;
     readonly System.Collections.Generic.List<string> history = new();
@@ -86,6 +87,12 @@ public sealed class Nexus3Form : Form
             save.Experience = loaded.Experience;
             save.Interventions = loaded.Interventions;
             save.RechargeCount = loaded.RechargeCount;
+            save.Crystals = loaded.Crystals;
+            save.CollectedCrystals = loaded.CollectedCrystals;
+            save.EnergyUpgrade = loaded.EnergyUpgrade;
+            save.StabilityUpgrade = loaded.StabilityUpgrade;
+            save.MusicEnabled = loaded.MusicEnabled;
+            save.MusicVolume = loaded.MusicVolume;
             save.ScannedCells = loaded.ScannedCells;
             save.Achievements = loaded.Achievements;
             exploredMissions = loaded.Missions;
@@ -103,7 +110,7 @@ public sealed class Nexus3Form : Form
 
     public Nexus3Form()
     {
-        Text = "NEXUS 4.0  //  SISTEMA IRIS  //  MISIONES + GUARDADO";
+        Text = "NEXUS 5.0  //  SISTEMA IRIS";
         MinimumSize = new Size(950, 660);
         Size = new Size(1250, 820);
         StartPosition = FormStartPosition.CenterScreen;
@@ -130,11 +137,11 @@ public sealed class Nexus3Form : Form
             {
                 progress = Math.Min(100, progress + rng.Next(2, 6));
                 if (splashBar != null && !splashBar.IsDisposed) splashBar.Value = progress;
-                if (progress == 100) { Build(); Home(); }
+                if (progress == 100) { Build(); Welcome(); }
             }
         };
-        Shown += (_, _) => { Restore(); Splash(); animation.Start(); };
-        FormClosing += (_, _) => Persist();
+        Shown += (_, _) => { Restore(); Splash(); animation.Start(); try { music.Set(save.MusicEnabled, save.MusicVolume); } catch (Exception ex) { MessageBox.Show("No se pudo iniciar el audio: " + ex.Message); } };
+        FormClosing += (_, _) => { Persist(); music.Dispose(); };
     }
 
     Label Label(string text, int size = 11, bool bold = false, Color? color = null)
@@ -185,9 +192,9 @@ public sealed class Nexus3Form : Form
         page = new Panel { Dock = DockStyle.Fill, BackColor = bg, AutoScroll = true, Padding = new Padding(30, 22, 30, 25) };
         Controls.Add(page); Controls.Add(bottom); Controls.Add(top); Controls.Add(nav);
         var logo = Label("N E X U S", 24, true, cyan); logo.Dock = DockStyle.Top; logo.Height = 60;
-        var caption = Label("SISTEMA DIMENSIONAL  /  V4.0", 9, false, muted); caption.Dock = DockStyle.Top; caption.Height = 62;
+        var caption = Label("SISTEMA DIMENSIONAL  /  V5.0", 9, false, muted); caption.Dock = DockStyle.Top; caption.Height = 62;
         var menu = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-        (string, Action)[] actions = { ("⌂   PANEL PRINCIPAL", Home), ("◈   PERFIL DEL CADETE", Profile), ("◇   EXPLORACIÓN", Explore), ("⚠   ANOMALÍAS IRIS", Anomalies), ("▦   CARTOGRAFÍA", Cartography), ("✦   MISIONES Y LOGROS", Missions), ("⚡   RECARGAR ENERGÍA", Recharge), ("☷   BITÁCORA", History), ("◉   ANIMACIONES", ToggleAnimations), ("ⓘ   ACERCA DE", About) };
+        (string, Action)[] actions = { ("⌂   PANEL PRINCIPAL", Home), ("◈   PERFIL DEL CADETE", Profile), ("◇   EXPLORACIÓN", Explore), ("⚠   ANOMALÍAS IRIS", Anomalies), ("▦   CARTOGRAFÍA", Cartography), ("✦   MISIONES Y LOGROS", Missions), ("◆   INVENTARIO", Inventory), ("▣   TIENDA IRIS", Shop), ("♫   MÚSICA", MusicSettings), ("⚡   RECARGAR ENERGÍA", Recharge), ("☷   BITÁCORA", History), ("◉   ANIMACIONES", ToggleAnimations), ("ⓘ   ACERCA DE", About) };
         int y = 0;
         foreach (var (name, action) in actions) { var b = Button(name, action); b.Dock = DockStyle.None; b.SetBounds(0, y, 218, 47); menu.Controls.Add(b); y += 59; }
         nav.Controls.Add(menu); nav.Controls.Add(caption); nav.Controls.Add(logo);
@@ -251,12 +258,14 @@ public sealed class Nexus3Form : Form
 
     void Home()
     {
-        Screen("Panel principal", "NEXUS 4.0  •  Misiones, niveles y guardado automático.");
+        Screen("Panel principal", "NEXUS 5.0  •  Inventario, mejoras, música y misiones.");
         Hero("PROTOCOLO NEXUS", "RED IRIS OPERATIVA   /   ACCESO DIMENSIONAL HABILITADO");
         Info("ESTADO DE LA MISIÓN", player == null ? "No hay explorador registrado. Crea un perfil para comenzar." :
             "CADETE: " + player.Nombre + "    EDAD: " + player.Edad + "\nENERGÍA: " + player.Energia + "%    ESTABILIDAD: " + player.Estabilidad + "%    INTERFERENCIA: " + anomaly.NivelInterferencia + "%", 125);
         Info("UNIVERSO IRIS", "02 realidades: Valle de Cristal y Sector Abisal.\nExplora, analiza anomalías y mantén tu energía vital.", 125);
         Add(Button("VER MISIONES Y LOGROS  ★", Missions, true));
+        Add(Button("INVENTARIO Y CRISTALES  ◆", Inventory));
+        Info("RECURSOS", "Cristales disponibles: " + save.Crystals + "   •   Mejoras de energía: " + save.EnergyUpgrade + "   •   Mejoras de estabilidad: " + save.StabilityUpgrade, 100);
         Info("ESTADÍSTICAS DE MISIÓN", "Inmersiones realizadas: " + exploredMissions + "     Sectores escaneados: " + scannedSectors +
             "\nNivel: " + NexusProgress.Level(save.Experience) + "     Experiencia: " + save.Experience + " XP", 112);
         Meter("PROGRESO DEL SIGUIENTE NIVEL", NexusProgress.LevelProgress(save.Experience));
@@ -311,7 +320,8 @@ public sealed class Nexus3Form : Form
             var title = Label(worlds[i], 15, true, cyan); title.Dock = DockStyle.Top; title.Height = 42;
             var btn = Button("INICIAR INMERSIÓN", () => {
                 if (player!.Energia < 20) { MessageBox.Show("Energía insuficiente. Recarga antes de explorar."); return; }
-                player.ModificarEnergia(-15); player.ModificarEstabilidad(-5);
+                player.ModificarEnergia(-Math.Max(5, 15 - save.EnergyUpgrade * 2)); player.ModificarEstabilidad(-Math.Max(1, 5 - save.StabilityUpgrade));
+                if (rng.Next(100) < 35) { save.Crystals += 2; MessageBox.Show("¡Hallazgo dimensional! Has conseguido 2 cristales.", "NEXUS"); }
                 exploredMissions++; Award(20, "Inmersión en " + worlds[selected]);
                 MessageBox.Show("Inmersión completada en " + worlds[selected] + "\nEnergía: " + player.Energia + "%\nEstabilidad: " + player.Estabilidad + "%", "NEXUS");
                 Explore();
@@ -371,6 +381,7 @@ public sealed class Nexus3Form : Form
             tile.Click += (_, _) => {
                 string key = index + ":" + row + ":" + col;
                 if (save.ScannedCells.Add(key)) { scannedSectors++; Award(5, "Nuevo sector escaneado: " + key); }
+                if (symbol == '◆' && save.CollectedCrystals.Add(key)) { save.Crystals += 3; Log("Cristal recogido en " + key + " (+3)"); MessageBox.Show("¡Has recogido 3 cristales!", "Inventario IRIS"); }
                 MessageBox.Show("Sector [" + (row + 1) + "," + (col + 1) + "]\n" +
                 (symbol == '?' ? "Zona no cartografiada" : symbol == '⚠' ? "Riesgo detectado" : symbol == '◆' ? "Cristal energético" :
                 symbol == 'P' ? "Posición del explorador" : symbol == '⌂' ? "Base de operaciones" : symbol == '●' ? "Punto de interés" :
@@ -436,10 +447,96 @@ public sealed class Nexus3Form : Form
         }, true));
     }
 
+
+    void Welcome()
+    {
+        Screen("Bienvenido a NEXUS 5.0", "Selecciona cómo quieres iniciar tu aventura.");
+        Hero("NEXUS 5.0", "UNIVERSO IRIS   /   NUEVA ERA DE EXPLORACIÓN");
+        Info("ESTADO DE PARTIDA", player == null ? "No existe una partida guardada. Crea tu explorador." :
+            "Partida recuperada: " + player.Nombre + "\nNivel: " + NexusProgress.Level(save.Experience) +
+            "   •   Cristales: " + save.Crystals, 130);
+        Add(Button(player == null ? "CREAR NUEVA PARTIDA" : "CONTINUAR PARTIDA", player == null ? Profile : Home, true));
+        if (player != null) Add(Button("NUEVA PARTIDA (REINICIAR PROGRESO)", NewGame));
+        Add(Button("CONFIGURACIÓN DE MÚSICA", MusicSettings));
+    }
+
+    void NewGame()
+    {
+        if (MessageBox.Show("¿Iniciar desde cero? Se reemplazará la partida guardada.", "NEXUS",
+            MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
+        player = null;
+        anomaly = new Anomalia("Interferencia Cuántica IRIS", 40);
+        exploredMissions = 0; scannedSectors = 0;
+        history.Clear();
+        save.PlayerName = "";
+        save.Experience = 0; save.Missions = 0; save.Scans = 0;
+        save.Interventions = 0; save.RechargeCount = 0; save.Crystals = 0;
+        save.EnergyUpgrade = 0; save.StabilityUpgrade = 0;
+        save.ScannedCells.Clear(); save.CollectedCrystals.Clear(); save.Achievements.Clear();
+        try { if (System.IO.File.Exists(NexusProgress.SavePath)) System.IO.File.Delete(NexusProgress.SavePath); }
+        catch (Exception ex) { MessageBox.Show("No se pudo reiniciar el guardado: " + ex.Message); return; }
+        Profile();
+    }
+
+    void Inventory()
+    {
+        Screen("Inventario dimensional", "Recursos y equipamiento de tu explorador.");
+        Hero("ALMACÉN IRIS", "CRISTALES ENERGÉTICOS   /   RECURSOS RECUPERADOS");
+        Info("◆ CRISTALES DISPONIBLES", save.Crystals + " cristales\nRecolecta cristales en los mapas o durante inmersiones.", 120);
+        Info("EQUIPAMIENTO", "Módulo de energía: nivel " + save.EnergyUpgrade +
+            "\nEstabilizador dimensional: nivel " + save.StabilityUpgrade, 120);
+        Add(Button("IR A LA TIENDA DE MEJORAS", Shop, true));
+        Add(Button("ABRIR CARTOGRAFÍA", Cartography));
+    }
+
+    void Shop()
+    {
+        Screen("Tienda IRIS", "Intercambia cristales por mejoras permanentes.");
+        Info("SALDO DISPONIBLE", "◆ " + save.Crystals + " cristales", 90);
+        Info("MÓDULO DE ENERGÍA", "Costo: 5 cristales por nivel. Reduce el consumo de energía por inmersión. Máximo nivel 5.", 120);
+        Add(Button("MEJORAR ENERGÍA  /  5 ◆", () => BuyUpgrade(true), true));
+        Info("ESTABILIZADOR", "Costo: 5 cristales por nivel. Reduce la pérdida de estabilidad. Máximo nivel 5.", 120);
+        Add(Button("MEJORAR ESTABILIDAD  /  5 ◆", () => BuyUpgrade(false), true));
+    }
+
+    void BuyUpgrade(bool energy)
+    {
+        int level = energy ? save.EnergyUpgrade : save.StabilityUpgrade;
+        if (level >= 5) { MessageBox.Show("Esta mejora ya está al nivel máximo."); return; }
+        if (save.Crystals < 5) { MessageBox.Show("Necesitas al menos 5 cristales."); return; }
+        save.Crystals -= 5;
+        if (energy) save.EnergyUpgrade++; else save.StabilityUpgrade++;
+        Log("Mejora comprada: " + (energy ? "energía" : "estabilidad"));
+        Shop();
+    }
+
+    void MusicSettings()
+    {
+        Screen("Configuración de audio", "Música ambiental original sintetizada para NEXUS.");
+        Info("BANDA SONORA", "Música: " + (save.MusicEnabled ? "activada" : "desactivada") +
+            "\nVolumen: " + save.MusicVolume + "%", 120);
+        Add(Button(save.MusicEnabled ? "SILENCIAR MÚSICA" : "ACTIVAR MÚSICA", () =>
+        {
+            save.MusicEnabled = !save.MusicEnabled;
+            ApplyMusic();
+        }, true));
+        Add(Button("VOLUMEN BAJO  /  15%", () => { save.MusicVolume = 15; ApplyMusic(); }));
+        Add(Button("VOLUMEN MEDIO  /  35%", () => { save.MusicVolume = 35; ApplyMusic(); }));
+        Add(Button("VOLUMEN ALTO  /  65%", () => { save.MusicVolume = 65; ApplyMusic(); }));
+    }
+
+    void ApplyMusic()
+    {
+        try { music.Set(save.MusicEnabled, save.MusicVolume); }
+        catch (Exception ex) { MessageBox.Show("Error de audio: " + ex.Message); }
+        Persist();
+        MusicSettings();
+    }
+
     void About()
     {
-        Screen("Acerca de NEXUS", "Edición 3.0 de la interfaz dimensional.");
-        Hero("NEXUS 3.0", "CENTRO DE CONTROL IRIS   /   INTERFAZ DE EXPLORACIÓN");
+        Screen("Acerca de NEXUS", "Edición 5.0 de la interfaz dimensional.");
+        Hero("NEXUS 5.0", "CENTRO DE CONTROL IRIS   /   INTERFAZ DE EXPLORACIÓN");
         Info("ARQUITECTURA", "Windows Forms en C# y .NET 10. Reutiliza las entidades originales Explorador y Anomalia.\nGuardado automático en AppData local. La aplicación de consola original permanece sin modificaciones. Atajos: Ctrl+1 a Ctrl+5 para navegar, Ctrl+L para la bitácora.", 145);
     }
 }
