@@ -6,7 +6,15 @@ Generar una distribución de NEXUS.WindowsForms para Windows x64, probarla fuera
 ## Automatización incorporada
 El workflow `.github/workflows/nexus-build-release.yml` restaura dependencias, compila en Release y publica la aplicación para Windows x64 como paquete autocontenido. El ZIP queda disponible como artefacto de GitHub Actions. Cuando se envía una etiqueta con formato `v*`, el workflow crea una GitHub Release y adjunta el ZIP.
 
-## Evidencia de compilación y paquete generado\n- Ejecución de GitHub Actions: https://github.com/estjairodamianrodriguezhu-max/nexus-jairo-rodriguez/actions/runs/45288447369\n- Resultado verificado: compilación Release y publicación autocontenida Windows x64 correctas.\n- Artefacto generado: `NEXUS-6.0-win-x64` (ZIP), disponible en la sección Artifacts de esa ejecución.\n- La GitHub Release pública todavía está pendiente de crear mediante una etiqueta `v*` y de probar el ZIP descargado en un equipo Windows sin Visual Studio.\n\n## Cómo generar una versión
+## Evidencia de compilación y paquete generado
+- Ejecución de GitHub Actions: https://github.com/estjairodamianrodriguezhu-max/nexus-jairo-rodriguez/actions/runs/45288447369
+- Resultado verificado: compilación Release y publicación autocontenida Windows x64 correctas.
+- Artefacto generado: `NEXUS-6.0-win-x64` (ZIP), disponible en la sección Artifacts de esa ejecución.
+- El usuario confirmó que descargó y ejecutó el paquete en Windows sin Visual Studio; la aplicación abrió y mostró su menú principal.
+- También confirmó el inicio de una partida, la recolección de cristales y el guardado/recuperación del progreso.
+- La GitHub Release pública todavía está pendiente de crear mediante una etiqueta `v*`.
+
+## Cómo generar una versión
 1. Confirmar que la compilación de la rama elegida termina correctamente.
 2. Crear y enviar una etiqueta de versión, por ejemplo:
 
@@ -18,7 +26,7 @@ git push origin v1.0.0
 3. Abrir la pestaña Actions del repositorio y comprobar que el workflow finalice correctamente.
 4. Abrir Releases y descargar `NEXUS-6.0-win-x64.zip`.
 5. Extraerlo en una carpeta distinta del proyecto y ejecutar el archivo `.exe`.
-6. Probar el inicio, navegación, guardado local y demás funciones que dependan del entorno.
+6. Probar el inicio, navegación, guardado local y demás funciones que dependan del entorno. En esta entrega ya se confirmó el inicio del ejecutable, la recolección de cristales y el guardado/recuperación de progreso.
 
 ## Consideraciones
 - La publicación autocontenida incluye el runtime de .NET necesario, pero no instala SQL Server. Las funciones SQL requieren que el equipo tenga acceso a una instancia configurada y que la cadena de conexión sea válida.
