@@ -9,7 +9,7 @@ Esta rama se creó para organizar las pruebas del proyecto NEXUS 6.0 sin modific
 - Plataforma de publicación prevista: Windows x64
 - Rama de trabajo: `testing-debugging`
 
-## Matriz de pruebas funcionales
+## Resultado de integración continua (GitHub Actions)\n- Workflow ejecutado: `NEXUS - Build, Testing and Release`.\n- Resultado: **correcto** en la ejecución `45288447369` (23/11/2026).\n- Restauración NuGet: correcta.\n- Compilación Release: correcta.\n- Publicación autocontenida Windows x64: correcta.\n- ZIP de distribución: generado como artefacto `NEXUS-6.0-win-x64`.\n- Durante la primera ejecución se detectó una llave de cierre adicional en `NexusProgress.cs` (CS1022); se corrigió y la ejecución posterior finalizó correctamente.\n- La Release pública aún no se ha creado porque falta enviar una etiqueta `v*`. Las pruebas funcionales manuales de la matriz continúan pendientes.\n\n## Matriz de pruebas funcionales
 
 | ID | Caso | Procedimiento | Resultado esperado | Estado real |
 |---|---|---|---|---|
