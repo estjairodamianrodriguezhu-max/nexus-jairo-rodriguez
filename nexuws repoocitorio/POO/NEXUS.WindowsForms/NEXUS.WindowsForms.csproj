@@ -10,4 +10,7 @@
     <Compile Include="../POO/Explorador.cs" Link="Dominio/Explorador.cs" />
     <Compile Include="../POO/Anomalia.cs" Link="Dominio/Anomalia.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.2" />
+  </ItemGroup>
 </Project>
