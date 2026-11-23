@@ -1,0 +1,58 @@
+name: NEXUS - Build, Testing and Release
+
+on:
+  push:
+    branches:
+      - main
+      - feature/nexus-interfaz-futurista
+      - testing-debugging
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: windows-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restaurar dependencias
+        run: dotnet restore "nexuws repoocitorio/POO/NEXUS.WindowsForms/NEXUS.WindowsForms.csproj"
+
+      - name: Compilar en Release
+        run: dotnet build "nexuws repoocitorio/POO/NEXUS.WindowsForms/NEXUS.WindowsForms.csproj" --configuration Release --no-restore
+
+      - name: Publicar ejecutable Windows x64
+        run: dotnet publish "nexuws repoocitorio/POO/NEXUS.WindowsForms/NEXUS.WindowsForms.csproj" --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --output ./publish
+
+      - name: Comprimir publicación
+        shell: pwsh
+        run: Compress-Archive -Path "./publish/*" -DestinationPath "./NEXUS-6.0-win-x64.zip" -Force
+
+      - name: Guardar artefacto de compilación
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEXUS-6.0-win-x64
+          path: NEXUS-6.0-win-x64.zip
+          if-no-files-found: error
+
+      - name: Crear GitHub Release al publicar una etiqueta
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          gh release create $tag "./NEXUS-6.0-win-x64.zip" --title "NEXUS 6.0 - $tag" --notes "Versión de NEXUS 6.0 para Windows x64. Incluye la aplicación publicada en modo autocontenido."
