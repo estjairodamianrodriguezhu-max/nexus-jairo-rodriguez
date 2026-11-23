@@ -547,7 +547,7 @@ public sealed class Nexus3Form : Form
         save.Interventions = 0; save.RechargeCount = 0; save.Crystals = 0;
         save.EnergyUpgrade = 0; save.StabilityUpgrade = 0;
         save.ScannedCells.Clear(); save.CollectedCrystals.Clear(); save.ResolvedRisks.Clear(); save.Achievements.Clear();
-        try { if (System.IO.File.Exists(NexusProgress.SavePath)) System.IO.File.Delete(NexusProgress.SavePath); }
+        try { NexusProgress.Reset(); }
         catch (Exception ex) { MessageBox.Show("No se pudo reiniciar el guardado: " + ex.Message); return; }
         Profile();
     }
